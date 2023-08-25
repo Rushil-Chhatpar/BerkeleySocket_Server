@@ -1,0 +1,4 @@
+﻿  Server.cpp
+C:\Users\chha0024\Downloads\BerkeleySocket_Server\Server\Server\Server.cpp(14,12): warning C4101: 'serverSocket': unreferenced local variable
+C:\Users\chha0024\Downloads\BerkeleySocket_Server\Server\Server\Server.cpp(14,26): warning C4101: 'acceptSocket': unreferenced local variable
+  Server.vcxproj -> C:\Users\chha0024\Downloads\BerkeleySocket_Server\Server\x64\Debug\Server.exe
