@@ -103,11 +103,81 @@ int main()
     }
 
     cout << "Accepted connection\n\n";
+
+
+
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    //
+    // Send and receive data
+    //
+
+    char buffer[200];
+    int byteCount;
+    enum STATUS
+    {
+        SENDING = 0,
+        RECEIVING = 1,
+    };
+
+    STATUS status = RECEIVING;
+
+    while (strcmp(buffer, "SHUTDOWN") != 0)
+    {
+        if (status == SENDING)
+        {
+            cout << "\nServer: ";
+            cin.getline(buffer, 200);
+            byteCount = send(acceptSocket, buffer, 200, 0);
+            if (byteCount > 0)
+            {
+                //cout << "\nMessage sent.\n\n";
+                status = RECEIVING;
+            }
+            else
+                cout << "\nMessage failed to send.\n\n";
+        }
+        else if (status == RECEIVING)
+        {
+            byteCount = recv(acceptSocket, buffer, 200, 0);
+            if (byteCount > 0)
+            {
+                cout << "\nClient: " << buffer << "\n";
+                status = SENDING;
+            }
+        }
+    }
+
+    //byteCount = recv(acceptSocket, buffer, 200, 0);
+
+    //if (byteCount > 0)
+    //{
+    //    cout << "Message received: " << buffer << "\n";
+    //}
+    //else
+    //{
+    //    CleanupWSADLL();
+    //    return 0;
+    //}
+
+    //char confirmation[200] = "Message Received";
+    //byteCount = send(acceptSocket, confirmation, 200, 0);
+    //if (byteCount > 0)
+    //{
+    //    cout << "Confirmation message sent\n";
+    //}
+    //else
+    //{
+    //    CleanupWSADLL();
+    //    return 0;
+    //}
+
+
+    
+
     system("pause");
-
-
     CleanupWSADLL();
-
     return 0;
 }
 
