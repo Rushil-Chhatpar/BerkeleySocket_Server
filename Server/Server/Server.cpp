@@ -7,6 +7,8 @@
 
 using namespace std;
 
+void CleanupWSADLL();
+
 int main()
 {
     cout << "\n\nTHIS IS A SERVER!!!\n\n\n";
@@ -42,7 +44,7 @@ int main()
     if (serverSocket == INVALID_SOCKET)
     {
         cout << "Error creating socket: " << WSAGetLastError() << "\n";
-        WSACleanup();
+        CleanupWSADLL();
         return 0;
     }
     else
@@ -58,13 +60,14 @@ int main()
     sockaddr_in service;
     service.sin_family = AF_INET;
     InetPton(AF_INET, _T("127.0.0.1"), &service.sin_addr.s_addr); // OR &service.sin_addr.S_un.S_addr
+    // Loopback address. https://www.geeksforgeeks.org/what-is-a-loopback-address/
     service.sin_port = htons(port);
 
     if (bind(serverSocket, (SOCKADDR*)&service, sizeof(service)) == SOCKET_ERROR)
     {
         cout << "Server bind failed: " << WSAGetLastError() << "\n";
         closesocket(serverSocket);
-        WSACleanup();
+        CleanupWSADLL();
         return 0;
     }
     else
@@ -95,7 +98,7 @@ int main()
     if (acceptSocket == INVALID_SOCKET)
     {
         cout << "Accept connection failed: " << WSAGetLastError() << "\n";
-        WSACleanup();
+        CleanupWSADLL();
         return 0;
     }
 
@@ -103,9 +106,15 @@ int main()
     system("pause");
 
 
-    // Shut down WSA DLL
-    int cleanupError = WSACleanup();
-    cout << "\n\n\n\n\n\nCleanup result: " << cleanupError <<"\n\n";
+    CleanupWSADLL();
 
     return 0;
+}
+
+
+void CleanupWSADLL()
+{
+    // Shut down WSA DLL
+    int cleanupError = WSACleanup();
+    cout << "\n\n\n\n\n\nCleanup result: " << cleanupError << "\n\n";
 }
