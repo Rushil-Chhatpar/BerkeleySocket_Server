@@ -1,6 +1,8 @@
 // Server.cpp : This file contains the 'main' function. Program execution begins and ends there.
 //
 #include "stdafx.h"
+//#include <semaphore>
+//#include <Mspthrd.h>
 #include <WinSock2.h>
 #include <WS2tcpip.h>
 #include <iostream>
@@ -9,15 +11,25 @@ using namespace std;
 
 void CleanupWSADLL();
 
+DWORD WINAPI ReceivingThread(LPVOID param);
+DWORD WINAPI SendingThread(LPVOID param);
+
+SOCKET acceptSocket;
+bool ProcessOver = false;
+
+
 int main()
 {
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
     cout << "\n\nTHIS IS A SERVER!!!\n\n\n";
     
     //
     // Step 1. Set up WSA DLL
     //
 
-    SOCKET serverSocket, acceptSocket;
+    SOCKET serverSocket;
     int port = 55555;
     WSADATA wsaData;
     int wsaError;
@@ -105,7 +117,7 @@ int main()
     cout << "Accepted connection\n\n";
 
 
-
+    
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -113,72 +125,56 @@ int main()
     // Send and receive data
     //
 
-    char buffer[200];
-    int byteCount;
-    enum STATUS
-    {
-        SENDING = 0,
-        RECEIVING = 1,
-    };
+    DWORD threadID;
+    HANDLE threadHDL[2];
+    threadHDL[0] = CreateThread(NULL, 0, ReceivingThread, NULL, 0, &threadID);
+    SetThreadPriority(threadHDL[0], THREAD_PRIORITY_ABOVE_NORMAL);
+    threadHDL[1] = CreateThread(NULL, 0, SendingThread, NULL, 0, &threadID);
+    SetThreadPriority(threadHDL[1], THREAD_PRIORITY_NORMAL);
 
-    STATUS status = RECEIVING;
-
-    while (strcmp(buffer, "SHUTDOWN") != 0)
-    {
-        if (status == SENDING)
-        {
-            cout << "\nServer: ";
-            cin.getline(buffer, 200);
-            byteCount = send(acceptSocket, buffer, 200, 0);
-            if (byteCount > 0)
-            {
-                //cout << "\nMessage sent.\n\n";
-                status = RECEIVING;
-            }
-            else
-                cout << "\nMessage failed to send.\n\n";
-        }
-        else if (status == RECEIVING)
-        {
-            byteCount = recv(acceptSocket, buffer, 200, 0);
-            if (byteCount > 0)
-            {
-                cout << "\nClient: " << buffer << "\n";
-                status = SENDING;
-            }
-        }
-    }
-
-    //byteCount = recv(acceptSocket, buffer, 200, 0);
-
-    //if (byteCount > 0)
+    //char buffer[200];
+    //int byteCount;
+    //enum STATUS
     //{
-    //    cout << "Message received: " << buffer << "\n";
-    //}
-    //else
-    //{
-    //    CleanupWSADLL();
-    //    return 0;
-    //}
+    //    SENDING = 0,
+    //    RECEIVING = 1,
+    //};
 
-    //char confirmation[200] = "Message Received";
-    //byteCount = send(acceptSocket, confirmation, 200, 0);
-    //if (byteCount > 0)
-    //{
-    //    cout << "Confirmation message sent\n";
-    //}
-    //else
-    //{
-    //    CleanupWSADLL();
-    //    return 0;
-    //}
+    //STATUS status = RECEIVING;
 
+    //while (strcmp(buffer, "SHUTDOWN") != 0)
+    //{
+    //    if (status == SENDING)
+    //    {
+    //        cout << "\nServer: ";
+    //        cin.getline(buffer, 200);
+    //        byteCount = send(acceptSocket, buffer, 200, 0);
+    //        if (byteCount > 0)
+    //        {
+    //            //cout << "\nMessage sent.\n\n";
+    //            status = RECEIVING;
+    //        }
+    //        else
+    //            cout << "\nMessage failed to send.\n\n";
+    //    }
+    //    else if (status == RECEIVING)
+    //    {
+    //        byteCount = recv(acceptSocket, buffer, 200, 0);
+    //        if (byteCount > 0)
+    //        {
+    //            cout << "\nClient: " << buffer << "\n";
+    //            status = SENDING;
+    //        }
+    //    }
+    //}
 
     
-
-    system("pause");
-    CleanupWSADLL();
-    return 0;
+    if (ProcessOver == true)
+    {
+        system("pause");
+        CleanupWSADLL();
+        return 0;
+    }
 }
 
 
@@ -187,4 +183,38 @@ void CleanupWSADLL()
     // Shut down WSA DLL
     int cleanupError = WSACleanup();
     cout << "\n\n\n\n\n\nCleanup result: " << cleanupError << "\n\n";
+}
+
+DWORD __stdcall ReceivingThread(LPVOID param)
+{
+    char buffer[200];
+    int byteCount;
+    while (strcmp(buffer, "SHUTDOWN") != 0)
+    {
+        byteCount = recv(acceptSocket, buffer, 200, 0);
+        if (byteCount > 0)
+            cout << "\nClient: " << buffer << "\n";
+    }
+    if (strcmp(buffer, "SHUTDOWN") == 0)
+        ProcessOver = true;
+    return 0;
+}
+
+DWORD __stdcall SendingThread(LPVOID param)
+{
+    char buffer[200];
+    int byteCount;
+    while (strcmp(buffer, "SHUTDOWN") != 0)
+    {
+        cout << "\nEnter your message: ";
+        cin.getline(buffer, 200);
+        byteCount = send(acceptSocket, buffer, 200, 0);
+        if (byteCount < 0)
+        {
+            cout << "\nMessage failed to send!\n";
+        }
+    }
+    if (strcmp(buffer, "SHUTDOWN") == 0)
+        ProcessOver = true;
+    return 0;
 }
